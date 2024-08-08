@@ -3,11 +3,29 @@
 
    echo "---> Running custom assemble script"
 
-   # Show current directory contents
-   echo "---> Current directory contents:"
+   # Show environment variables
+   echo "---> Environment variables:"
+   env
+
+   # Show current directory and contents
+   echo "---> Current directory: $(pwd)"
+   echo "---> Contents of current directory:"
    ls -la
 
+   # Show contents of /tmp
+   echo "---> Contents of /tmp:"
+   ls -la /tmp
+
+   # If src directory exists, show its contents
+   if [ -d /tmp/src ]; then
+     echo "---> Contents of /tmp/src:"
+     ls -la /tmp/src
+   else
+     echo "---> /tmp/src directory does not exist"
+   fi
+
    # Execute the default S2I script
+   echo "---> Executing default S2I assemble script"
    /usr/libexec/s2i/assemble
 
    # Ensure the static directory is copied
