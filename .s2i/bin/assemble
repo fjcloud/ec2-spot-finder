@@ -3,6 +3,10 @@
 
    echo "---> Running custom assemble script"
 
+   # Show current directory contents
+   echo "---> Current directory contents:"
+   ls -la
+
    # Execute the default S2I script
    /usr/libexec/s2i/assemble
 
@@ -14,6 +18,8 @@
      ls -la /opt/app-root/src/static
    else
      echo "---> Warning: static directory not found in the source"
+     echo "---> Contents of the current directory:"
+     ls -la
    fi
 
    echo "---> Assemble script completed"
