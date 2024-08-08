@@ -7,5 +7,5 @@ set -e
 # Ensure the static directory is copied
 if [ -d ./static ]; then
   echo "---> Copying static files..."
-  cp -Rf ./static /opt/app-root/src/static
+  cp -Rf ./static /tmp/src
 fi
