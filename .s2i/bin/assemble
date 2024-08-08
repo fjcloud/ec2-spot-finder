@@ -26,7 +26,7 @@ fi
 
 # Copy source files to the working directory
 echo "---> Copying source files to working directory"
-cp -Rf /tmp/src/. ./
+rsync -av --delete /tmp/src/ ./
 
 # Show contents of working directory after copy
 echo "---> Contents of working directory after copy:"
@@ -40,7 +40,7 @@ echo "---> Executing default S2I assemble script"
 if [ -d ./static ]; then
   echo "---> Copying static files..."
   mkdir -p /opt/app-root/src/static
-  cp -Rf ./static/* /opt/app-root/src/static/
+  rsync -av --delete ./static/ /opt/app-root/src/static/
   echo "---> Static files copied to /opt/app-root/src/static"
   ls -la /opt/app-root/src/static
 else
