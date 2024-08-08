@@ -1,4 +1,4 @@
-Copy#!/bin/bash
+#!/bin/bash
 set -e
 
 # Execute the default S2I script
