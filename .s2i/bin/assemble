@@ -1,11 +1,19 @@
 #!/bin/bash
-set -e
+   set -e
 
-# Execute the default S2I script
-/usr/libexec/s2i/assemble
+   echo "---> Running custom assemble script"
 
-# Ensure the static directory is copied
-if [ -d ./static ]; then
-  echo "---> Copying static files..."
-  cp -Rf ./static /tmp/src
-fi
+   # Execute the default S2I script
+   /usr/libexec/s2i/assemble
+
+   # Ensure the static directory is copied
+   if [ -d ./static ]; then
+     echo "---> Copying static files..."
+     cp -Rf ./static /opt/app-root/src/static
+     echo "---> Static files copied to /opt/app-root/src/static"
+     ls -la /opt/app-root/src/static
+   else
+     echo "---> Warning: static directory not found in the source"
+   fi
+
+   echo "---> Assemble script completed"
