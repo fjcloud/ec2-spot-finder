@@ -1,0 +1,11 @@
+Copy#!/bin/bash
+set -e
+
+# Execute the default S2I script
+/usr/libexec/s2i/assemble
+
+# Ensure the static directory is copied
+if [ -d ./static ]; then
+  echo "---> Copying static files..."
+  cp -Rf ./static /opt/app-root/src/static
+fi
