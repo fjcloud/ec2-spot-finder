@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EC2 Spot Instance Finder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>EC2 Spot Instance Finder</h1>
+        <div class="form-group">
+            <label for="region-select">Select Region:</label>
+            <select id="region-select"></select>
+        </div>
+        <button id="find-deals">Find Best Deals</button>
+        <button id="find-global-deal">Find Top 5 Global Deals</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const regionSelect = document.getElementById('region-select');
+            const findDealsButton = document.getElementById('find-deals');
+            const findGlobalDealButton = document.getElementById('find-global-deal');
+            const resultsDiv = document.getElementById('results');
+
+            async function fetchWithTimeout(resource, options = {}) {
+                const { timeout = 8000 } = options;
+                
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), timeout);
+
+                const response = await fetch(resource, {
+                    ...options,
+                    signal: controller.signal  
+                });
+                clearTimeout(id);
+
+                return response;
+            }
+
+            // Fetch regions and populate the select element
+            try {
+                console.log("Fetching regions...");
+                const response = await fetchWithTimeout('/api/regions', { timeout: 10000 });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const regions = await response.json();
+                console.log(`Received ${regions.length} regions`);
+                regions.forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region;
+                    option.textContent = region;
+                    regionSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching regions:', error);
+                resultsDiv.innerHTML = `An error occurred while fetching regions: ${error.message}. Please try again later.`;
+            }
+
+            findDealsButton.addEventListener('click', async () => {
+                const selectedRegion = regionSelect.value;
+                if (!selectedRegion) {
+                    alert('Please select a region');
+                    return;
+                }
+
+                resultsDiv.innerHTML = 'Loading...';
+
+                try {
+                    const response = await fetchWithTimeout(`/api/spot-deals?region=${selectedRegion}`, { timeout: 15000 });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const deals = await response.json();
+                    
+                    console.log('Received deals:', deals);
+
+                    if (!Array.isArray(deals) || deals.length === 0) {
+                        resultsDiv.innerHTML = 'No deals found matching the criteria.';
+                        return;
+                    }
+
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <tr>
+                            <th>Instance Type</th>
+                            <th>CPUs</th>
+                            <th>Memory</th>
+                            <th>Spot Price</th>
+                            <th>Spot Savings Rate</th>
+                            <th>Price per vCPU</th>
+                        </tr>
+                    `;
+
+                    deals.forEach(deal => {
+                        const row = table.insertRow();
+                        row.insertCell().textContent = deal.InstanceType;
+                        row.insertCell().textContent = deal.VCPUS;
+                        row.insertCell().textContent = deal.Memory;
+                        const price = parseFloat(deal.SpotPrice);
+                        row.insertCell().textContent = isNaN(price) ? 'N/A' : `$${price.toFixed(4)}`;
+                        row.insertCell().textContent = deal.SpotSavingRate;
+                        const pricePerVCPU = price / deal.VCPUS;
+                        row.insertCell().textContent = isNaN(pricePerVCPU) ? 'N/A' : `$${pricePerVCPU.toFixed(6)}`;
+                    });
+
+                    resultsDiv.innerHTML = '';
+                    resultsDiv.appendChild(table);
+                } catch (error) {
+                    console.error('Error fetching deals:', error);
+                    resultsDiv.innerHTML = `An error occurred while fetching deals: ${error.message}. Please try again later.`;
+                }
+            });
+
+            findGlobalDealButton.addEventListener('click', async () => {
+                resultsDiv.innerHTML = 'Searching for the top 5 global deals...';
+
+                try {
+                    const response = await fetchWithTimeout('/api/best-global-deal', { timeout: 30000 });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const deals = await response.json();
+                    
+                    console.log('Received global best deals:', deals);
+
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <tr>
+                            <th>Rank</th>
+                            <th>Instance Type</th>
+                            <th>CPUs</th>
+                            <th>Memory</th>
+                            <th>Spot Price</th>
+                            <th>Price per vCPU</th>
+                            <th>Region</th>
+                        </tr>
+                    `;
+
+                    deals.forEach((deal, index) => {
+                        const row = table.insertRow();
+                        row.insertCell().textContent = index + 1;
+                        row.insertCell().textContent = deal.instanceType;
+                        row.insertCell().textContent = deal.cpus;
+                        row.insertCell().textContent = deal.memory;
+                        row.insertCell().textContent = `$${deal.price.toFixed(4)}`;
+                        row.insertCell().textContent = `$${deal.pricePerVCPU.toFixed(6)}`;
+                        row.insertCell().textContent = deal.region;
+                    });
+
+                    resultsDiv.innerHTML = '<h2>Top 5 Global Deals</h2>';
+                    resultsDiv.appendChild(table);
+                } catch (error) {
+                    console.error('Error fetching global best deals:', error);
+                    resultsDiv.innerHTML = `An error occurred while fetching the global best deals: ${error.message}. Please try again later.`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
